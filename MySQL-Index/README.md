@@ -149,7 +149,8 @@ Mysql中有专门负责优化SELECT语句的优化器模块，主要功能：通
 
     >>**案例 1 单表优化**
 
-    >>CREATE TABLE IF NOT EXISTS `article` (
+    >>创建单表
+    >>>CREATE TABLE IF NOT EXISTS `article` (
     `id` INT(10) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
     `author_id` INT(10) UNSIGNED NOT NULL,
     `category_id` INT(10) UNSIGNED NOT NULL,
@@ -158,18 +159,22 @@ Mysql中有专门负责优化SELECT语句的优化器模块，主要功能：通
     `title` VARBINARY(255) NOT NULL,
     `content` TEXT NOT NULL
     );
-
-    >>INSERT INTO `article`  (`author_id`, `category_id`, `views`, `comments`, `title` , `content`) VALUES
+    >>插入数据
+    >>>INSERT INTO `article`  (`author_id`, `category_id`, `views`, `comments`, `title` , `content`) VALUES
     (1,1,1,1,'1','1'),
     (2,2,2,2,'2','2'),
     (1,1,3,3,'3','3');
-    SELECT * FROM article;
 
-    >>select id , author_id from article where category_id = 1 and comments >1 order by  views desc limit 1;
+    >>查询数据
+    >>>SELECT * FROM article;
 
-    >>查看执行：explain select id , author_id from article where category_id = 1 and comments >1 order by  views desc limit 1;
+    >>>select id , author_id from article where category_id = 1 and comments >1 order by  views desc limit 1;
 
-    >>**explain分析结果:很显然,type是ALL,即最坏的情况。Extra里还出现了Using filesort,也是最坏的情况。优化是必须的**
+    >>查看执行：
+    >>>explain select id , author_id from article where category_id = 1 and comments >1 order by  views desc limit 1;
+
+    >>**explain分析结果:**
+    >>>**很显然,type是ALL,即最坏的情况。Extra里还出现了Using filesort,也是最坏的情况。优化是必须的**
 
     >>开始优化:
 
