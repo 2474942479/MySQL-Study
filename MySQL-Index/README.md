@@ -230,3 +230,119 @@ Mysql中有专门负责优化SELECT语句的优化器模块，主要功能：通
     >>>>>explain分析结论：book表type变为ref，book表rows骤减
 
     >>>**总结：两表左/右外连接时，建立索引建在相反的表上，即左外链接建右表，右外连接建左表**
+    
+    >案例三:三表优化
+
+>>建立phone表:
+
+        create table if not exists `phone`(
+        `phone_id` int(10) unsigned  not null auto_increment,
+        `card` int(10) unsigned not null,
+        primary key(`phone_id`)
+        )engine = innodb;
+>>插入随机数据:
+
+        insert into phone(card) values(floor(1+(rand()*20)));
+
+>>执行explain分析结论：ALL
+
+>>建立索引: 
+
+        alter table class add index idx_c(card);alter table phone add index idx_c(card);
+
+>>分析结论：
+    
+        后2行的type都是ref且总rows优化很好,效果不错。因此索引最好设置在需要经常查询的字段中。
+>>总结：
+        
+        join语句优化 优化尽可能减少Join语句中的NestedLoop的循环总次数;“永远用小结果集驱动大的结果集”。
+
+## 索引失效常见原因：
+1. 全值匹配我最爱 即查询字段与复合索引全匹配
+2. 最佳左前缀法则：如果索引了多列，要遵守最左前缀法则。指的是查询从索引的最左前列开始并且不跳过索引中的列。
+3. 不在索引列上做任何操作（计算、函数、(自动or手动)类型转换），会导致索引失效而转向全表扫描
+4. 存储引擎不能使用索引中范围条件右边的列
+5. 尽量使用覆盖索引(只访问索引的查询(索引列和查询列一致))，减少select*
+6. mysql在使用不等于(!=或者<>)的时候无法使用索引会导致全表扫描
+7. is null ,is not null 也无法使用索引
+8. like以通配符开头('%abc...')mysql索引失效会变成全表扫描的操作  解决方法:1.通配符写右边2.覆盖索引  注意：like %在前属于范围查询，会是自己索引失效，也会导致后边的索引失效。但是%在右边的（即左边为定值的）不会导致自己和后边的索引失效。
+9. 字符串不加单引号索引失效  原因：底层发生了隐式的类型转换导致的索引失效，引起全表扫描
+10. 少用or,用它来连接时会索引失效
+
+## order by （group by）优化
+
+ORDER BY子句，尽量使用Index方式排序,避免使用FileSort方式排序
+尽可能在索引列上完成排序操作，遵照索引建的最佳左前缀
+如果不在索引列上，filesort有两种算法:双路排序和单路排序
+
+优化策略:
+    增大sort_buffer_size参数的设置，增大max_length_for_sort_data参数的设置
+
+为排序使用索引
+MySql两种排序方式∶文件排序或扫描有序索引排序，MySql能为排序与查询使用相同的索引
+
+KEY a_b_c(a,b,c)
+
+order by能使用索引(最左前缀)
+
+- ORDER BY a
+- ORDER BY a,b
+- ORDER BY a,b,c
+- ORDER BY a DESC, b DESC,c DESC    *//如果WHERE使用索引的最左前缀定义为常量，则order by能使用索引*
+- WHERE a = const ORDER BY b,c
+- WHERE a = const ANDb = const ORDER BYc
+- WHERE a = const ORDER BY b,c
+- WHERE a = const AND b > const ORDER BYb,c
+
+不能使用索引进行排序
+
+- ORDER BYaAsC,b DESC,c DESC	*//排序不—致*
+- WHEREg = const ORDER BY b,c	*//严丢失a索引*
+- WHEREa = const ORDER BY c		*//丢失b索引*
+- WHERE a = const ORDER BY a,d	*//d不是索引的一部分*
+- WHERE a in(...) ORDER BY b,c		*//对于排序来说,多个相等条件也是范围查询*
+
+## 面试：
+1. 使用覆盖索引时 and顺序不重要
+
+2. 使用order by时 不遵守顺序，会出现using filesort 。特例：当order by的字段为常量时，将不会出现。
+
+3. 分组group by  先排序再分组，会有临时表产生，即出现using temporary；
+
+**建议：**
+
+    对于单键索引，尽量选择针对当前query过滤性更好的索引
+
+    尽可能通过分析统计信息和调整query的写法来达到选择合适索引的目的
+
+    在选择组合索引的时候，当前Query中过滤性最好的字段在索引字段顺序中，位置越靠前越好。
+
+    在选择组合索引的时候，尽量选择可以能够包含当前query中的where字句中更多字段的索引
+
+## 生产环境中优化数据库流程：
+
+1. 观察，至少跑1天，看看生产的慢SQL情况。
+
+2. 开启慢查询日志，设置阙值，比如超过5秒钟的就是慢SQL，并将它抓取出来。
+
+3. explain+慢SQL分析
+
+4. show profile
+
+5. 运维经理or DBA，进行SQL数据库服务器的参数调优。
+
+**总结**
+1. 慢查询的开启并捕获
+2. explain+慢SQL分析
+3. show profile查询SQL在Mysql服务器里面的执行细节和生命周期情况
+4. SQL数据库服务器的参数调优。
+
+## in和exists比较结论：
+
+    in查询：查询出B中的所有的id并缓存起来，然后检查A表中查询出的id在缓存中是否存在，如果存在则将A的查询数据加入到结果集中，直到遍历完A表中所有的结果集为止。
+
+    exists查询：EXISTS()查询是将主查询的结果集放到子查询中做验证，根据验证结果是true或false来决定主查询数据结果是否得以保存。
+
+    在MYSQL的连表查询中，最好是遵循‘小表驱动大表的原则’
+
+    IN()查询适合B表数据比A表数据小的情况，IN()查询是从缓存中取数据exists()适合B表比A表数据大的情况：当A表数据与B表数据一样大时,in与exists效率差不多,可任选一个使用
