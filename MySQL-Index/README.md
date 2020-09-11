@@ -159,6 +159,7 @@ Mysql中有专门负责优化SELECT语句的优化器模块，主要功能：通
     `title` VARBINARY(255) NOT NULL,
     `content` TEXT NOT NULL
     );
+    
     >>插入数据
     >>>INSERT INTO `article`  (`author_id`, `category_id`, `views`, `comments`, `title` , `content`) VALUES
     (1,1,1,1,'1','1'),
