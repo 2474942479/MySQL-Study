@@ -1,9 +1,9 @@
 # MySQL索引
 是帮助MySQL高效获取数据的数据结构。简单理解：排好序的快速查找数据结构
 ## 索引分类：
-	单值索引：即一个索引只包含单个列，一个表可以有多个单列索引
-	唯一索引：索引列的值必须唯一，但允许有空值
-	复合索引：即一个索引包含多个列
+	1. 单值索引：即一个索引只包含单个列，一个表可以有多个单列索引
+	2. 唯一索引：索引列的值必须唯一，但允许有空值
+	3. 复合索引：即一个索引包含多个列
 ## 基本语法：
 		创建：	CREATE [UNIQUE ]  INDEX indexName ON tablename(columnname(length));
 		        ALTER tablename ADD [UNIQUE] INDEX indexName ON(columnname(length));
