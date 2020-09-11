@@ -63,12 +63,12 @@
 
     >>(2) select_type:
 
-        SIMPLE		：简单的select查询
-        PRIMARY		：复杂查询最外层
-        SUBQUERY	：在select或where中包含了子查询
-        DERIUED		：在from中包含的子查询 嵌套
-        UNION		：在union之后的查询
-        UNION RESUL	：从union表获取结果的select
+        >>>SIMPLE：简单的select查询
+        >>>PRIMARY	：复杂查询最外层
+        >>>SUBQUERY：在select或where中包含了子查询
+        >>>DERIUED	：在from中包含的子查询 嵌套
+        >>>UNION	：在union之后的查询
+        >>>UNION RESUL：从union表获取结果的select
 
     >>(3)table：显示这一行的数据是关于那一张表的
 
@@ -134,6 +134,7 @@
 
 
 4. >索引优化
+
     unsigned :无符号  非负数，用此类型可以增加数据长度!
     varbinary是二进制字符类型
 
