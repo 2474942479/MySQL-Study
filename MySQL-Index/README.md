@@ -5,15 +5,15 @@
 	2. 唯一索引：索引列的值必须唯一，但允许有空值
 	3. 复合索引：即一个索引包含多个列
 ## 基本语法：
-		创建：	CREATE [UNIQUE ]  INDEX indexName ON tablename(columnname(length));
+	创建：	CREATE [UNIQUE ]  INDEX indexName ON tablename(columnname(length));
 		        ALTER tablename ADD [UNIQUE] INDEX indexName ON(columnname(length));
-		删除：	DROP INDEX indexName ON tablename;
-		查看：	SHOW INDEX FROM table_name(\G);
-		有四种方式来更改数据表的索引:
-			(1)ALTERTABLE tbl_name ADD PRIMARY KEY(column_list):该语句添加一个主键，这意味着索引值必须是唯一的，且不能为NULL。
-			(2)ALTERTABLE tbl_name ADD UNQUE indx_name (column_ist):这条语句创建索引的值必须是唯一的（除了NUL外，NULL可能会出现多次)
-			(3)ALTERTABLE tbl_name ADD INDEX index_name(column_list):添加普通索引，索引值可出现多次。 
-			(4)ALTERTABLE tbl_name ADD FULLTEXT index_name (column_list)该语句指定了索引为FULLTEXT，用于全文索引。
+	删除：	DROP INDEX indexName ON tablename;
+	查看：	SHOW INDEX FROM table_name(\G);
+	有四种方式来更改数据表的索引:
+		(1)ALTERTABLE tbl_name ADD PRIMARY KEY(column_list):该语句添加一个主键，这意味着索引值必须是唯一的，且不能为NULL。
+		(2)ALTERTABLE tbl_name ADD UNQUE indx_name (column_ist):这条语句创建索引的值必须是唯一的（除了NUL外，NULL可能会出现多次)
+		(3)ALTERTABLE tbl_name ADD INDEX index_name(column_list):添加普通索引，索引值可出现多次。 
+		(4)ALTERTABLE tbl_name ADD FULLTEXT index_name (column_list)该语句指定了索引为FULLTEXT，用于全文索引。
 
 ## 适合建立索引：
 	1.主键自动建立唯一索引
