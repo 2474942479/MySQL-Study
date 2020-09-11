@@ -56,4 +56,5 @@
     mysqldumpslow -s t -t 10-g "left join" /var/lib/mysql/zsq-slow.log
 
 另外建议在使用这些命令时结合│和more使用，否则有可能出现爆屏情况
+
     mysqldumpslow -s r-t 10 /var/lib/mysql/zsq-slow.log | more
