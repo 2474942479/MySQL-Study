@@ -58,3 +58,154 @@
 另外建议在使用这些命令时结合│和more使用，否则有可能出现爆屏情况
 
     mysqldumpslow -s r-t 10 /var/lib/mysql/zsq-slow.log | more
+
+
+# 批量插入1000w条数据
+
+## 函数插入
+    
+1. 建表dept
+
+    `create table dept( id int unsigned primary key auto_increment, dept_no mediumint unsigned not null default 0, dept_name varchar(20) not null default '', loc varchar(13) not null default '')engine=innodb default charset=gbk;`
+
+    建表emp
+
+    `create table emp( id int unsigned primary key auto_increment, emp_no mediumint unsigned not null default 0, ename varchar(20) not null default '', job varchar(9) not null default '', mgr mediumint unsigned not null default 0, hiredate date not null, sal decimal(7,2) not null, comm decimal(7,2) not null, dept_no mediumint unsigned not null default 0 )enginne=innodb default charset=gbk;`
+
+2. 设置参数 log_bin_trust_function_creators
+
+    创建函数，假如报错:This function has none of DETERMINISTIC......
+
+    原因：#由于开启过慢查询日志，因为我们开启了bin-log,我们就必须为我们的function指定一个参数。
+
+        show variables like 'log_bin_trust_function_creators';
+
+        set global log_bin_trust_function_creators=1;
+
+    这样添加了参数以后，如果mysqld重启，上述参数又会消失，永久方法:
+
+        windows下my.ini[mysqld]加上log_bin_trust_function_creators=1
+
+        linux下/etc/my.cnf下my.cnf[mysqld]加上log_bin_trust_function_creators=1
+
+3. 创建函数，保证每条数据都不同
+
+    **用于生成随机数**
+
+        DELIMITER $$
+        CREATE FUNCTION rand_string(n INT)RETURNS VARCHAR(255)
+        BEGIN
+        DECLARE chars_str VARCHAR(100) DEFAULT 'abcdefghijklmnopgrstuvwxyzABCDEFJHIJKLMNOPQRSTUVWXYZ';
+        DECLARE return_str VARCHAR(255) DEFAULT '';
+        DECLARE i INT DEFAULT 0;
+        WHILE i < n DO
+        SET return_str =CONCAT(return_str,SUBSTRING(chars_str,FLOOR(1+RAND()*52),1));
+        SET i = i +1;
+        END WHILE;
+        RETURN return_str;
+        END $$
+
+    **用于随机产生部门编号**
+
+        DELIMITER $$
+        CREATE FUNCTION rand_num( )
+        RETURNS INT(5)
+        BEGIN
+        DECLARE i INT DEFAULT 0;
+        SET i = FLOOR(100+RAND()*10);
+        RETURN i;
+        END $$
+
+    **删除函数**
+
+    drop function rand_num;
+
+4. 创建存储过程
+
+    **创建往emp表中插入数据的存储过程**
+
+        DELIMITER $$
+        CREATE PROCEDURE insert_emp(IN START INT(10),IN max_num INT(10))
+        BEGIN
+        DECLARE i INT DEFAULT 0;
+        SET autocommit= 0;
+        REPEAT
+        SET i=i+ 1;
+        INSERT INTO emp (emp_no, ename ,job ,mgr ,hiredate ,sal ,comm ,dept_no ) VALUES((START+i),rand_string(6),'SALESMAN',0001,CURDATE(),2000,400,rand_num());
+        UNTIL i = max_num
+        END REPEAT;
+        COMMIT;
+        END $$
+
+
+    **创建往dept表中插入数据的存储过程**
+
+        DELIMITER $$
+        CREATE PROCEDURE insert_dept(IN START INT(10),IN max_num INT(10))
+        BEGIN
+        DECLARE i INT DEFAULT 0;
+        SET autocommit= 0;
+        REPEAT
+        INSERT INTO dept (dept_no ,dept_name,loc) VALUES ((START+i),rand_string(10),rand_string(8));
+        SET i=i+1;
+        UNTIL i = max_num
+        END REPEAT;
+        COMMIT;
+        END $$
+
+5. 调用存储过程
+
+    delimiter ; *//更换为以;结束*
+
+    call insert_dept(100,10);
+
+# Show ProFile：
+    是mysql提供可以用来分析当前会话中语句执行的资源消耗情况。可以用于SQL的调优的测量默认情况下，参数处于关闭状态，并保存最近15次的运行结果
+
+## 分析步骤：
+
+        1 是否支持：show variables like '%profiling%';
+        2 开启功能 set profiling=1;
+        3 运行sql
+        4 查看结果 show profiles;
+        5 诊断SQL：show profile cpu,block io for query (上一步前面的问题SQL数字号码Query_ID);
+
+            type:(参数类型)
+            |ALL		--显示所有的开销信息
+            |BLOCK IO		--显示块IO相关开销
+            |CONTEXT SWITCHES --上下文切换相关开销
+            |CPU		--显示CPU相关开销信息
+            |IPC		--显示发送和接收相关开销信息	
+            |MEMORY		--显示内存相关开销信息
+            |PAGE FAULTS	--显示页面错误相关开销信息
+            |SOURCE		--显示交换次数相关开销的信息
+            |SWAPS		--显示和Source_function，Source_file，Source_line相关的开销信息
+
+    日常开发需要注意的结论：
+        converting HEAP to MyISAM查询结果太大，内存都不够用了往磁盘上搬了。
+        Creating tmp table创建临时表	拷贝数据到临时表	用完再删除
+        Copying to tmp table on disk把内存中临时表复制到磁盘，危险!! !
+        locked
+    全局查询日志：永远不要在生产环境开启这个功能。
+        set global general_log=1;
+        set global log_output='TABLE';
+        此后，你所编写的sql语句，将会记录到mysql库里的general_log表，可以用下面的命令查看
+        select * from mysql.general_log;
+
+**innodb引擎和myisam引擎区别:**
+
+1. myisam是默认表类型不是事物安全的；innodb支持事物。
+
+2. myisam不支持外键；Innodb支持外键。
+
+3. myisam支持表级锁（不支持高并发，以读为主）；innodb支持行锁（共享锁，排它锁，意向锁），粒度更小，但是在执行不能确定扫描范围的sql语句时，innodb同样会锁全表。
+
+4. 执行大量select，myisam是最好的选择；执行大量的update和insert最好用innodb。
+
+5. myisam在磁盘上存储上有三个文件.frm(存储表定义)  .myd（存储表数据）  .myi（存储表索引）；innodb磁盘上存储的是表空间数据文件和日志文件，innodb表大小只受限于操作系统大小。
+
+6. myisam使用非聚集索引，索引和数据分开，只缓存索引；innodb使用聚集索引，索引和数据存在一个文件。
+
+7. myisam保存表具体行数；innodb不保存。
+
+8. delete from table时，innodb不会重新简历表，而会一行一行的删除。
