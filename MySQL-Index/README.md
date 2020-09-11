@@ -231,31 +231,31 @@ Mysql中有专门负责优化SELECT语句的优化器模块，主要功能：通
 
     >>>**总结：两表左/右外连接时，建立索引建在相反的表上，即左外链接建右表，右外连接建左表**
     
-    >案例三:三表优化
+    >>案例三:三表优化
 
->>建立phone表:
+	>>>建立phone表:
 
-        create table if not exists `phone`(
-        `phone_id` int(10) unsigned  not null auto_increment,
-        `card` int(10) unsigned not null,
-        primary key(`phone_id`)
-        )engine = innodb;
->>插入随机数据:
+		create table if not exists `phone`(
+		`phone_id` int(10) unsigned  not null auto_increment,
+		`card` int(10) unsigned not null,
+		primary key(`phone_id`)
+		)engine = innodb;
+	>>>插入随机数据:
 
-        insert into phone(card) values(floor(1+(rand()*20)));
+		insert into phone(card) values(floor(1+(rand()*20)));
 
->>执行explain分析结论：ALL
+	>>>执行explain分析结论：ALL
 
->>建立索引: 
+	>>>建立索引: 
 
-        alter table class add index idx_c(card);alter table phone add index idx_c(card);
+		alter table class add index idx_c(card);alter table phone add index idx_c(card);
 
->>分析结论：
-    
-        后2行的type都是ref且总rows优化很好,效果不错。因此索引最好设置在需要经常查询的字段中。
->>总结：
-        
-        join语句优化 优化尽可能减少Join语句中的NestedLoop的循环总次数;“永远用小结果集驱动大的结果集”。
+	>>>分析结论：
+
+		后2行的type都是ref且总rows优化很好,效果不错。因此索引最好设置在需要经常查询的字段中。
+	>>>总结：
+
+		join语句优化 优化尽可能减少Join语句中的NestedLoop的循环总次数;“永远用小结果集驱动大的结果集”。
 
 ## 索引失效常见原因：
 1. 全值匹配我最爱 即查询字段与复合索引全匹配
