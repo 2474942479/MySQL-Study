@@ -68,14 +68,13 @@ Mysql中有专门负责优化SELECT语句的优化器模块，主要功能：通
     >>**(1)  id：id值越大 优先级越高 值相同则按顺序由上到下执行**
 
     >>(2) select_type:
-
-        >>>SIMPLE：简单的select查询
-        >>>PRIMARY	：复杂查询最外层
-        >>>SUBQUERY：在select或where中包含了子查询
-        >>>DERIUED	：在from中包含的子查询 嵌套
-        >>>UNION	：在union之后的查询
-        >>>UNION RESUL：从union表获取结果的select
-
+    
+            SIMPLE：简单的select查询
+            PRIMARY	：复杂查询最外层
+            SUBQUERY：在select或where中包含了子查询
+            DERIUED	：在from中包含的子查询 嵌套
+            UNION	：在union之后的查询
+            UNION RESUL：从union表获取结果的select
     >>(3)table：显示这一行的数据是关于那一张表的
 
     >>**(4)type:访问类型  显示查询使用了何种类型**
@@ -106,6 +105,7 @@ Mysql中有专门负责优化SELECT语句的优化器模块，主要功能：通
                     key_len显示的值为索引字段的最大可能长度，并非实际使用长度，即key_len是根据表定义计算而得，不是通过表内检索出的
 
     >>(8)  ref:		显示索引被谁使用了，如果可能的话，是一个常数。哪些列或常量被用于查找索引列上的值
+    
     >>**(9)  rows：	根据表统计信息及索引选用情况，大致估算出找到所需的记录 所需要读取的行数 (越小越好)**
             
     >>(10) extra：	包含不适合在其他列中显示但十分重要的额外信息（常见前五个）
